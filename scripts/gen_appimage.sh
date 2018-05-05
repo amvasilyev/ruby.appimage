@@ -31,28 +31,43 @@ fi
 
 # App name, used by generate_appimage.
 APP=ruby
-VERSION=2.3.6
+VERSION=2.5.1
 
 ROOT_DIR="$PWD"
 APP_DIR="$PWD/$APP.AppDir"
+if [ -d $APP_DIR ]; then
+    echo "--> cleaning up the AppDir"
+    rm -rf $APP_DIR
+fi
+mkdir -p $APP_DIR
 
-echo "--> get ruby source"
-wget https://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.6.tar.gz
-tar xf ruby-2.3.6.tar.gz
+RUBY_DIR=ruby-2.5.1
+if [ -d $RUBY_DIR ]; then
+    echo "--> removing old ruby directory"
+    rm -rf $RUBY_DIR
+fi
+
+RUBY_ARCHIVE=$RUBY_DIR.tar.xz
+if [ ! -f $RUBY_ARCHIVE ]; then
+    echo "--> get ruby source"
+    wget http://cache.ruby-lang.org/pub/ruby/2.5/ruby-2.5.1.tar.xz -O ruby-2.5.1.tar.xz -O $RUBY_ARCHIVE
+fi
+echo "--> unpacking ruby archive"
+tar xf $RUBY_ARCHIVE
 
 echo "--> compile Ruby and install it into AppDir"
-pushd ruby-2.3.6
-./configure --prefix=$APP_DIR/usr
-make -j2
+pushd $RUBY_DIR
+./configure --prefix=$APP_DIR/usr --disable-install-doc
+CPU_NUMBER=$(grep -c '^processor' /proc/cpuinfo)
+make -j$CPU_NUMBER
 make install
 popd
 
 echo "--> patch away absolute paths"
-replace_paths_in_file "$APP_DIR/usr/bin/ruby" $APP_DIR/usr .
-
+replace_paths_in_file $APP_DIR/usr/bin/ruby $APP_DIR/usr/ .
 
 # remove doc, man, ri
-rm -rf "$APP_DIR/usr/share"
+rm -rf $APP_DIR/usr/share
 
 ########################################################################
 # Get helper functions and move to AppDir
@@ -66,7 +81,7 @@ wget -q https://github.com/AppImage/AppImages/raw/master/functions.sh -O ./funct
 # cp "$ROOT_DIR/runtime/nvim.desktop" "$APP_DIR/"
 # cp "$ROOT_DIR/runtime/nvim.png" "$APP_DIR/"
 
-pushd "$APP_DIR"
+pushd $APP_DIR
 
 echo "--> get AppRun"
 get_apprun
@@ -76,6 +91,7 @@ cp $ROOT_DIR/$APP.desktop $ROOT_DIR/$APP.png .
 
 echo "--> copy dependencies"
 copy_deps
+copy_deps # Double time to be sure
 
 echo "--> move the libraries to usr/bin"
 move_lib
@@ -89,25 +105,9 @@ popd
 # AppDir complete. Now package it as an AppImage.
 ########################################################################
 
-echo "--> enable fuse"
-sudo modprobe fuse
-sudo usermod -a -G fuse $(whoami)
-
 echo "--> generate AppImage"
 #   - Expects: $ARCH, $APP, $VERSION env vars
 #   - Expects: ./$APP.AppDir/ directory
-#   - Produces: ../out/$APP-$VERSION.glibc$GLIBC_NEEDED-$ARCH.AppImage
-generate_appimage
-
-# NOTE: There is currently a bug in the `generate_appimage` function (see
-# https://github.com/probonopd/AppImages/issues/228) that causes repeated builds
-# that result in the same name to fail.
-# Moving the final executable to a different folder gets around this issue.
-
-# mv "$ROOT_DIR"/out/*.AppImage "$ROOT_DIR"/build/bin
-# Remove the (now empty) folder the AppImage was built in
-# rmdir "$ROOT_DIR"/out
-
-mv ../out/*.AppImage "$TRAVIS_BUILD_DIR"
+generate_type2_appimage
 
 echo '==> finished'
