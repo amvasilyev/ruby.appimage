@@ -32,9 +32,10 @@ insert_run_header() {
   read -d '' header <<'HEADER' || true
 #!/bin/sh
 # -*- ruby -*-
-bindir="${0%/*}"
+bindir=$( cd "${0%/*}"; pwd )
+executable=$bindir/${0##*/}
 cd "$bindir/../"
-exec "$bindir/ruby" -x "$0" "$@"
+exec "$bindir/ruby" -x "$executable" "$@"
 HEADER
   echo "$header" | cat - "$file" > temp
   chmod --reference="$file" temp
