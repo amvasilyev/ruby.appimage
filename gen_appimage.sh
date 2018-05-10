@@ -10,27 +10,27 @@ set -e
 # replace paths in binary file, padding paths with /
 # usage: replace_paths_in_file FILE PATTERN REPLACEMENT
 replace_paths_in_file () {
-  local file="$1"
-  local pattern="$2"
-  local replacement="$3"
-  if [[ ${#pattern} -lt ${#replacement} ]]; then
-    echo "New path '$replacement' is longer than '$pattern'. Exiting."
-    return
-  fi
-  while [[ ${#pattern} -gt ${#replacement} ]]; do
-    replacement="${replacement}/"
-  done
-  echo -n "Replacing $pattern with $replacement ... "
-  sed -i -e "s|$pattern|$replacement|g" $file
-  echo "Done!"
+    local file="$1"
+    local pattern="$2"
+    local replacement="$3"
+    if [[ ${#pattern} -lt ${#replacement} ]]; then
+        echo "New path '$replacement' is longer than '$pattern'. Exiting."
+        return
+    fi
+    while [[ ${#pattern} -gt ${#replacement} ]]; do
+        replacement="${replacement}/"
+    done
+    echo -n "Replacing $pattern with $replacement ... "
+    sed -i -e "s|$pattern|$replacement|g" $file
+    echo "Done!"
 }
 
 # modify shell-based ruby executables so they will use
 # proper ruby executable and run from the usr/ directory.
 # This script correctly modifies executables in $APP_DIR/usr/bin
 insert_run_header() {
-  local file="$1"
-  read -d '' header <<'HEADER' || true
+    local file="$1"
+    read -d '' header <<'HEADER' || true
 #!/bin/sh
 # -*- ruby -*-
 bindir=$( cd "${0%/*}"; pwd )
@@ -40,14 +40,14 @@ unset GEM_PATH
 unset GEM_HOME
 exec "$bindir/ruby" -x "$executable" "$@"
 HEADER
-  echo "$header" | cat - "$file" > temp
-  chmod --reference="$file" temp
-  mv temp "$file"
+    echo "$header" | cat - "$file" > temp
+    chmod --reference="$file" temp
+    mv temp "$file"
 }
 
 # App arch, used by generate_appimage.
 if [ -z "$ARCH" ]; then
-  export ARCH="$(arch)"
+    export ARCH="$(arch)"
 fi
 
 # App name, used by generate_appimage.
