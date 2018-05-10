@@ -75,12 +75,17 @@ EOF
 fi
 
 ROOT_DIR="$PWD"
-APP_DIR="$PWD/$APP.AppDir"
+BUILD_DIR="$PWD/build"
+APP_DIR="$BUILD_DIR/$APP.AppDir"
 if [ -d $APP_DIR ]; then
     echo "--> cleaning up the AppDir"
     rm -rf $APP_DIR
 fi
 mkdir -p $APP_DIR
+
+# Go into the build directory, so we will not create a mess inside
+# the source directory
+pushd $BUILD_DIR
 
 RUBY_DIR=ruby-2.5.1
 if [ -d $RUBY_DIR ]; then
@@ -113,7 +118,7 @@ done
 
 if [ "$EXTRA_APP" == "true" ]; then
     echo "--> installing extra application"
-    . $APP.sh
+    . ../$APP.sh
 fi
 
 echo "--> remove unused files"
@@ -158,3 +163,5 @@ echo "--> generate AppImage"
 generate_type2_appimage
 
 echo '==> finished'
+
+popd
