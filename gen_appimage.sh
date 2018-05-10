@@ -50,8 +50,8 @@ fi
 
 # App name, used by generate_appimage.
 if [ "$#" -eq 0 ]; then
-    APP=adsf
-    VERSION=1.4.1
+    APP=ruby
+    VERSION=2.5.1
     EXTRA_APP=false
 elif [ "$#" -eq 2 ]; then
     APP=$1
