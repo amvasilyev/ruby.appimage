@@ -8,7 +8,7 @@ The work of the script was tested on Ubuntu 14.04. Resulting AppImages are succe
 
 In order to use the script just clone the repository and run `./gen_appimage.sh`.
 
-## Bundling the gemfiles into the appimage
+## Bundling the gems and ruby applications into the appimage
 
 The script can be used to bundle external applications that require Ruby. An example script to bundle [adsf](https://github.com/ddfreyne/adsf/) gem and it's executable as the starting point of the AppImage can be found in `examples` directory. In order to build the AppImage just run `./build_adsf.sh` in the `examples` directory.
 
