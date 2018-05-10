@@ -29,14 +29,16 @@ replace_paths_in_file () {
 # This script correctly modifies executables in $APP_DIR/usr/bin
 insert_run_header() {
   local file="$1"
-  read -d '' header <<'HEADER'
+  read -d '' header <<'HEADER' || true
 #!/bin/sh
 # -*- ruby -*-
 bindir="${0%/*}"
 cd "$bindir/../"
 exec "$bindir/ruby" -x "$0" "$@"
 HEADER
-  echo "$header" | cat - "$file" > temp && mv temp "$file"
+  echo "$header" | cat - "$file" > temp
+  chmod --reference="$file" temp
+  mv temp "$file"
 }
 
 # App arch, used by generate_appimage.
