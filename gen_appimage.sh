@@ -83,6 +83,10 @@ popd
 
 echo "--> patch away absolute paths"
 replace_paths_in_file $APP_DIR/usr/bin/ruby $APP_DIR/usr/ .
+for SCRIPT in erb gem irb rake
+do
+    insert_run_header "$APP_DIR/usr/bin/$SCRIPT"
+done
 
 # remove doc, man, ri
 rm -rf $APP_DIR/usr/share
