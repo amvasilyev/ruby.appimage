@@ -88,8 +88,11 @@ do
     insert_run_header "$APP_DIR/usr/bin/$SCRIPT"
 done
 
+echo "--> remove unused files"
 # remove doc, man, ri
 rm -rf $APP_DIR/usr/share
+# remove ruby headers
+rm -rf $APP_DIR/usr/include
 
 ########################################################################
 # Get helper functions and move to AppDir
