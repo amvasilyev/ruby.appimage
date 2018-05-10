@@ -24,6 +24,21 @@ replace_paths_in_file () {
   echo "Done!"
 }
 
+# modify shell-based ruby executables so they will use
+# proper ruby executable and run from the usr/ directory.
+# This script correctly modifies executables in $APP_DIR/usr/bin
+insert_run_header() {
+  local file="$1"
+  read -d '' header <<'HEADER'
+#!/bin/sh
+# -*- ruby -*-
+bindir="${0%/*}"
+cd "$bindir/../"
+exec "$bindir/ruby" -x "$0" "$@"
+HEADER
+  echo "$header" | cat - "$file" > temp && mv temp "$file"
+}
+
 # App arch, used by generate_appimage.
 if [ -z "$ARCH" ]; then
   export ARCH="$(arch)"
