@@ -100,12 +100,6 @@ rm -rf $APP_DIR/usr/include
 wget -q https://github.com/AppImage/AppImages/raw/master/functions.sh -O ./functions.sh
 . ./functions.sh
 
-# Copy desktop and icon file to AppDir for AppRun to pick them up.
-# get_apprun
-# get_desktop
-# cp "$ROOT_DIR/runtime/nvim.desktop" "$APP_DIR/"
-# cp "$ROOT_DIR/runtime/nvim.png" "$APP_DIR/"
-
 pushd $APP_DIR
 
 echo "--> get AppRun"
