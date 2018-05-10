@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 ########################################################################
 # Package the binaries built as an AppImage
@@ -48,8 +49,28 @@ if [ -z "$ARCH" ]; then
 fi
 
 # App name, used by generate_appimage.
-APP=ruby
-VERSION=2.5.1
+if [ "$#" -eq 0 ]; then
+    APP=adsf
+    VERSION=1.4.1
+    EXTRA_APP=false
+elif [ "$#" -eq 2 ]; then
+    APP=$1
+    VERSION=$2
+    EXTRA_APP=true
+else
+    cat <<EOF
+Invalid number of parameters have been passed to the script.
+
+Usage: "$0" [app] [version]
+
+app - name of the application to package.
+verision - version to use during the packaging.
+
+If you specify the name of the application, please provide
+app.sh file that will bundle the application into the appimage.
+EOF
+    exit
+fi
 
 ROOT_DIR="$PWD"
 APP_DIR="$PWD/$APP.AppDir"
@@ -87,6 +108,11 @@ for SCRIPT in erb gem irb rake
 do
     insert_run_header "$APP_DIR/usr/bin/$SCRIPT"
 done
+
+if [ "$EXTRA_APP" == "true" ]; then
+    echo "--> installing extra application"
+    . $APP.sh
+fi
 
 echo "--> remove unused files"
 # remove doc, man, ri
