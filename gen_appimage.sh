@@ -36,6 +36,8 @@ insert_run_header() {
 bindir=$( cd "${0%/*}"; pwd )
 executable=$bindir/${0##*/}
 cd "$bindir/../"
+unset GEM_PATH
+unset GEM_HOME
 exec "$bindir/ruby" -x "$executable" "$@"
 HEADER
   echo "$header" | cat - "$file" > temp
