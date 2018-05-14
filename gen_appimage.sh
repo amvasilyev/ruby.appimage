@@ -116,10 +116,14 @@ do
     insert_run_header "$APP_DIR/usr/bin/$SCRIPT"
 done
 
+popd # Leaving build subdirectory when calling external script
+
 if [ "$EXTRA_APP" == "true" ]; then
     echo "--> installing extra application"
-    . ../$APP.sh
+    . ./$APP.sh
 fi
+
+pushd $BUILD_DIR # Going back in order for scripts to work
 
 echo "--> remove unused files"
 # remove doc, man, ri
