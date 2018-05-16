@@ -27,6 +27,19 @@ RUN apt-get update && apt-get install -y \
     libgdbm-dev \
     wget \
     apt-transport-https
+
+# Install and configure GCC 8 to build ruby and packages
+# Inspiried by https://gist.github.com/application2000/73fd6f4bf1be6600a2cf9f56315a2d91
+RUN apt-get install software-properties-common -y && \
+    add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
+    apt-get update && \
+    apt-get install gcc-snapshot -y && \
+    apt-get update && \
+    apt-get install gcc-8 g++-8 -y && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8 && \
+    apt-get install gcc-4.8 g++-4.8 -y && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8;
+
 # Create /workspace directory to use for mounting build environment
 RUN addgroup --gid $GID $UNAME
 RUN adduser --uid $UID --gid $GID --shell /bin/bash --home /workspace $UNAME
