@@ -40,9 +40,7 @@ unset GEM_PATH
 unset GEM_HOME
 exec "$bindir/ruby" -x "$executable" "$@"
 HEADER
-    echo "$header" | cat - "$file" > temp
-    chmod --reference="$file" temp
-    mv temp "$file"
+    ex -sc "1i|$header" -cx $file
 }
 
 # App arch, used by generate_appimage.
