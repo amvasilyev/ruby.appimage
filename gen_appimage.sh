@@ -143,7 +143,14 @@ wget -q https://github.com/AppImage/AppImages/raw/master/functions.sh -O ./funct
 pushd $APP_DIR
 
 echo "--> get AppRun"
-get_apprun
+# get_apprun Do not use it currently due to the bug
+get_stable_apprun()
+{
+  TARGET_ARCH=${ARCH:-$SYSTEM_ARCH}
+  wget -c https://github.com/AppImage/AppImageKit/releases/download/10/AppRun-${TARGET_ARCH} -O AppRun
+  chmod a+x AppRun
+}
+get_stable_apprun
 
 echo "--> get desktop file and icon"
 cp $ROOT_DIR/$APP.desktop $ROOT_DIR/$APP.png .
