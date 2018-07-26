@@ -105,16 +105,18 @@ pushd $RUBY_DIR
 CPU_NUMBER=$(grep -c '^processor' /proc/cpuinfo)
 make -j$CPU_NUMBER
 make install
-popd
+popd # Leaving ruby directory after compilation
 
-echo "--> patch away absolute paths"
-replace_paths_in_file $APP_DIR/usr/bin/ruby $APP_DIR/usr/ .
+echo "--> patch away absolute path in scripts"
 for SCRIPT in erb gem irb rake
 do
     insert_run_header "$APP_DIR/usr/bin/$SCRIPT"
 done
-
 popd # Leaving build subdirectory when calling external script
+
+# Configuring CPATH variable
+export CPATH=$APP_DIR/usr/include
+export LD_LIBRARY_PATH=$APP_DIR/usr/lib
 
 if [ "$EXTRA_APP" == "true" ]; then
     echo "--> installing extra application"
@@ -122,6 +124,9 @@ if [ "$EXTRA_APP" == "true" ]; then
 fi
 
 pushd $BUILD_DIR # Going back in order for scripts to work
+
+echo "--> patch away absolute paths in ruby executable"
+replace_paths_in_file $APP_DIR/usr/bin/ruby $APP_DIR/usr/ .
 
 echo "--> remove unused files"
 # remove doc, man, ri
