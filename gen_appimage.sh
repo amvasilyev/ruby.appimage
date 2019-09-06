@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 ########################################################################
 # Package the binaries built as an AppImage
@@ -31,14 +30,11 @@ replace_paths_in_file () {
 insert_run_header() {
     local file="$1"
     read -d '' header <<'HEADER' || true
-#!/bin/sh
+#!/bin/bash
 # -*- ruby -*-
 bindir=$( cd "${0%/*}"; pwd )
 executable=$bindir/${0##*/}
-cd "$bindir/../"
-unset GEM_PATH
-unset GEM_HOME
-exec "$bindir/ruby" -x "$executable" "$@"
+exec ruby -x "$executable" "$@"
 HEADER
     ex -sc "1i|$header" -cx $file
 }
@@ -51,7 +47,7 @@ fi
 # App name, used by generate_appimage.
 if [ "$#" -eq 0 ]; then
     APP=ruby
-    VERSION=2.5.1
+    VERSION=2.6.3
     EXTRA_APP=false
 elif [ "$#" -eq 2 ]; then
     APP=$1
@@ -85,7 +81,9 @@ mkdir -p $APP_DIR
 # the source directory
 pushd $BUILD_DIR
 
-RUBY_DIR=ruby-2.5.1
+RUBY_VERSION=2.6.3
+RUBY_SHORT_VERSION=$(echo $RUBY_VERSION | awk -F. '{print $1"."$2}')
+RUBY_DIR=ruby-$RUBY_VERSION
 if [ -d $RUBY_DIR ]; then
     echo "--> removing old ruby directory"
     rm -rf $RUBY_DIR
@@ -94,16 +92,16 @@ fi
 RUBY_ARCHIVE=$RUBY_DIR.tar.xz
 if [ ! -f $RUBY_ARCHIVE ]; then
     echo "--> get ruby source"
-    wget http://cache.ruby-lang.org/pub/ruby/2.5/ruby-2.5.1.tar.xz -O ruby-2.5.1.tar.xz -O $RUBY_ARCHIVE
+    wget http://cache.ruby-lang.org/pub/ruby/$RUBY_SHORT_VERSION/$RUBY_DIR.tar.xz -O $RUBY_DIR.tar.xz -O $RUBY_ARCHIVE
 fi
 echo "--> unpacking ruby archive"
 tar xf $RUBY_ARCHIVE
 
 echo "--> compile Ruby and install it into AppDir"
 pushd $RUBY_DIR
-./configure --prefix=$APP_DIR/usr --disable-install-doc
+./configure --prefix=$APP_DIR/usr --disable-install-doc --disable-debug --disable-dependency-tracking --enable-shared --enable-load-relative
 CPU_NUMBER=$(grep -c '^processor' /proc/cpuinfo)
-make -j$CPU_NUMBER
+CFLAGS="-O3" make -j$CPU_NUMBER
 make install
 popd # Leaving ruby directory after compilation
 
@@ -112,25 +110,29 @@ for SCRIPT in erb gem irb rake
 do
     insert_run_header "$APP_DIR/usr/bin/$SCRIPT"
 done
+
 popd # Leaving build subdirectory when calling external script
 
 # Configuring CPATH variable
-export CPATH=$APP_DIR/usr/include
-export LD_LIBRARY_PATH=$APP_DIR/usr/lib
+export CPPFLAGS="-I${APP_DIR}/usr/include -I${APP_DIR}/usr/include/libxml2"
+export CFLAGS="${CPPFLAGS}"
+export LDFLAGS="-L${APP_DIR}/usr/lib -L${APP_DIR}/usr/lib64"
+export PATH="$APP_DIR/usr/bin:$PATH"
+export CPATH="$APP_DIR/usr/include"
+export LD_LIBRARY_PATH="$APP_DIR/usr/lib"
 
 if [ "$EXTRA_APP" == "true" ]; then
     echo "--> installing extra application"
     . ./$APP.sh
 fi
 
-pushd $BUILD_DIR # Going back in order for scripts to work
+if [ -z "$SKIP_BUILD" ]; then
 
-echo "--> patch away absolute paths in ruby executable"
-replace_paths_in_file $APP_DIR/usr/bin/ruby $APP_DIR/usr/ .
+pushd $BUILD_DIR # Going back in order for scripts to work
 
 echo "--> remove unused files"
 # remove doc, man, ri
-rm -rf $APP_DIR/usr/share
+rm -rf $APP_DIR/usr/share/{doc, man}
 # remove ruby headers
 rm -rf $APP_DIR/usr/include
 
@@ -150,7 +152,9 @@ get_stable_apprun()
   wget -c https://github.com/AppImage/AppImageKit/releases/download/10/AppRun-${TARGET_ARCH} -O AppRun
   chmod a+x AppRun
 }
-get_stable_apprun
+if [ ! -x AppRun ]; then
+  get_stable_apprun
+fi
 
 echo "--> get desktop file and icon"
 cp $ROOT_DIR/$APP.desktop $ROOT_DIR/$APP.png .
@@ -158,6 +162,14 @@ cp $ROOT_DIR/$APP.desktop $ROOT_DIR/$APP.png .
 echo "--> copy dependencies"
 copy_deps
 copy_deps # Double time to be sure
+
+if [ -d ${APP_DIR}/home ]; then
+  # Move home directory to the concrete place
+  echo "--> copying home directory"
+  rm -rf ${ROOT_DIR}/out/home
+  mkdir -p ${ROOT_DIR}/out
+  mv ${APP_DIR}/home ${ROOT_DIR}/out
+fi
 
 echo "--> move the libraries to usr/bin"
 move_lib
@@ -179,3 +191,5 @@ generate_type2_appimage
 echo '==> finished'
 
 popd
+
+fi
