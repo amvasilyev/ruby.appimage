@@ -2,51 +2,40 @@
 
 FROM ubuntu:14.04
 
-ARG UNAME=builduser
-ARG UID=1000
-ARG GID=1000
-
 MAINTAINER "Andrey Vasilyev <andrey.vasilyev@fruct.org>"
+
+ARG RUBY_VERSION=2.6.4
+ARG RUBY_INSTALL_VERSION=0.7.0
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DOCKER_BUILD=1
 
-# Install all dependencies required by the ruby build
-# and wget required by the gen_appimage.sh
-RUN apt-get update && apt-get install -y \
-    autoconf \
-    bison \
-    build-essential \
-    libssl-dev \
-    libyaml-dev \
-    libreadline6-dev \
-    zlib1g-dev \
-    libncurses5-dev \
-    libffi-dev \
-    libgdbm3 \
-    libgdbm-dev \
-    liblzma-dev \
-    patch \
-    wget \
-    apt-transport-https \
-    libcairo2 \
-    sudo \
-    vim \
-    software-properties-common
+RUN apt-get update && \
+        apt-get install -y apt-transport-https software-properties-common
 
-# Install and configure GCC 8 to build ruby and packages
+# Install and configure GCC 9 to build ruby and packages
 # Inspiried by https://gist.github.com/application2000/73fd6f4bf1be6600a2cf9f56315a2d91
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test -y && \
-    apt-get update && \
-    apt-get install gcc-8 g++-8 -y && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8;
+        apt-get update && \
+        apt-get install -y \
+        build-essential \
+        g++-9 \
+        g++-9 \
+        wget \
+        sudo \
+        vim && \
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100 --slave /usr/bin/g++ g++ /usr/bin/g++-9 && \
+        wget -O ruby-install-$RUBY_INSTALL_VERSION.tar.gz https://github.com/postmodern/ruby-install/archive/v$RUBY_INSTALL_VERSION.tar.gz && \
+        tar -xzvf ruby-install-$RUBY_INSTALL_VERSION.tar.gz && \
+        cd ruby-install-$RUBY_INSTALL_VERSION && \
+        make install && \
+        install -m 0755 -d /workspace/application && \
+        ruby-install ruby $RUBY_VERSION -i /workspace/ruby-root -- --disable-install-doc --disable-debug --disable-dependency-tracking --enable-shared --enable-load-relative
 
-# Create /workspace directory to use for mounting build environment
-RUN addgroup --gid $GID $UNAME
-RUN adduser --uid $UID --gid $GID --shell /bin/bash --home /workspace $UNAME
-COPY gen_appimage.sh /workspace
-RUN install -m 0755 -o $UID -g $GID -d /workspace/application
+# Put gen_appimage.sh script into the root
+COPY gen_appimage.sh /
+
 # Allow to run sudo without password for this user
-RUN echo "$UNAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN echo "ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-WORKDIR /workspace/application
+WORKDIR /workspace
