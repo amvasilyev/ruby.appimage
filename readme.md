@@ -1,5 +1,24 @@
 # Ruby packaging for AppImage
 
+This repository contains the instrumentation to create portable [AppImage](https://appimage.org) for the Ruby applications. The instrumentation is built on top of the Docker to ensure the consistency of the result.
+
+The repository contains the means to create the Docker container to facilitate the build process and the Bash script to execute it.
+
+In order to create AppImage with custom Ruby application you should:
+
+* Create application.desktop file that will run the application.
+* Create application.png file for the bundle.
+* Create application.sh file that will be executed inside the container to fill up the application directory.
+
+copy contents of the application to the $APP_DIR directory. This variable will be available via the environment variables.
+  *
+
+
+* Create the application executable in $APP_DIR/usr/bin directory.
+* Optionally create the executable called AppRun and put it into the $APP_DIR directory.
+* Run the `gen_appimage.sh` passing the name of the application and it's version as arguments from the directory containing .desktop, .png and .sh files: `./gen_appimage.sh application 1.0`.
+
+
 This repository contains an example on how you can package the Ruby application into portable [AppImage](https://appimage.org/). The script downloads the Ruby source code, compiles it, modifies for AppImage building and executes the build. The resulting file will be placed into the `out` sub-directory of the parent folder.
 
 The script does not configure the localhost environment for building the image. For that please use instructions provided by the [rbenv/ruby-build](https://github.com/rbenv/ruby-build/wiki) projects.
