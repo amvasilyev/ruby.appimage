@@ -18,7 +18,7 @@ fi
 insert_run_header() {
     local file="$1"
     read -d '' header <<'HEADER' || true
-#!/usr/bin/env ruby
+#!./bin/ruby
 HEADER
     ex -sc "1i|$header" -cx $file
 }
