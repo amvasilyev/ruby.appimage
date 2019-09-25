@@ -3,6 +3,7 @@ use std::{
     env,
     ffi::CString,
 };
+use std::borrow::Borrow;
 
 // Get the location of the executable. It will be in usr/bin somewhere
 // Use at as basis for the ENV variable generation
@@ -36,12 +37,16 @@ struct Environment {
 }
 
 const OS_ENV_PREFIX: &str = "OS_ENV_";
+const BLACKLISTED_ENVS: [&str; 3]= ["GEM_PATH", "GEM_HOME", "GEM_ROOT"];
 
 fn copy_environment() -> HashMap<String, String> {
     let mut environment = HashMap::new();
     for(key, value) in env::vars() {
         let os_key = format!("{}{}", OS_ENV_PREFIX, key);
         environment.insert(os_key, String::from(&value));
+        if BLACKLISTED_ENVS.contains(&key.borrow()) {
+            continue;
+        }
         environment.insert(key, value);
     }
     environment
@@ -76,7 +81,6 @@ fn convert_environment_to_cstrings(environment: &Environment) -> Vec<CString> {
     let mut result = Vec::new();
     for (key, value) in &environment.env {
         let new_env = format!("{}={}", key, value);
-        println!("{}", new_env);
         result.push(CString::new(new_env).unwrap());
     }
     result
