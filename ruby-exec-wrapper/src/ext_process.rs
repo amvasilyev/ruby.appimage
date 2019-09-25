@@ -26,7 +26,7 @@ pub fn create_new_environment() -> Vec<CString> {
         env: copy_environment(),
         root_dir: get_appimage_directory()
     };
-    patch_path(&mut environment);
+    patch_variables(&mut environment);
     convert_environment_to_cstrings(&environment)
 }
 
@@ -47,14 +47,29 @@ fn copy_environment() -> HashMap<String, String> {
     environment
 }
 
-fn patch_path(environment: &mut Environment) {
-    let patch_key = String::from("PATH");
-    let empty_value = String::from("");
-    let cur_path = environment.env.get(&patch_key).unwrap_or(&empty_value);
-    let new_value = format!("{appdir}/usr/bin/:{appdir}/usr/sbin/:{appdir}/usr/games/:{appdir}/bin/:{appdir}/sbin/:{cur_path}",
-                            appdir = environment.root_dir, cur_path=cur_path);
-    println!("{}", new_value);
-    environment.env.insert(patch_key, new_value);
+fn patch_variables(environment: &mut Environment) {
+    patch_variable("PATH", vec!["/usr/bin"], environment);
+    patch_variable("LD_LIBRARY_PATH", vec!["/usr/lib", "/usr/lib/x86_64-linux-gnu",
+                                           "/usr/lib64"], environment);
+    patch_variable("PYTHONPATH", vec!["/usr/share/pyshared"], environment);
+    patch_variable("XDG_DATA_DIRS", vec!["/usr/share"], environment);
+    patch_variable("PERLLIB", vec!["/usr/share/perl5", "/usr/lib/perl5"],
+                   environment);
+    // http://askubuntu.com/questions/251712/how-can-i-install-a-gsettings-schema-without-root-privileges
+    patch_variable("GSETTINGS_SCHEMA_DIR", vec!["/usr/share/glib-2.0/schemas/"],
+                   environment);
+    patch_variable("QT_PLUGIN_PATH", vec![], environment);
+}
+
+fn patch_variable(variable: &str, paths: Vec<&str>, environment: &mut Environment) {
+    let mut printed_paths: Vec<String> = paths.into_iter().map(|path| {
+        format!("{root_dir}{path}", root_dir = environment.root_dir, path = path)
+    }).collect();
+    let cur_value = environment.env.get(variable);
+    if cur_value.is_some() {
+        printed_paths.push(cur_value.unwrap().to_string());
+    }
+    environment.env.insert(variable.to_string(), printed_paths.join(":"));
 }
 
 fn convert_environment_to_cstrings(environment: &Environment) -> Vec<CString> {
