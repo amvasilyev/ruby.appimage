@@ -5,22 +5,28 @@ use std::{
 };
 use std::borrow::Borrow;
 use std::path::PathBuf;
+use std::io::{
+    Error,
+    ErrorKind,
+    Result
+};
 
-// Get the location of the executable. It will be in usr/bin somewhere
-// Use at as basis for the ENV variable generation
-// Remove bogus entities from the ENV list for a new process
-// Start the new process with the new environment
-
-pub fn get_appimage_directory() -> String {
+pub fn get_executable_path() -> Result<CString> {
     let current_exe = env::current_exe().expect("Failed to get path to current executable");
-    let parent_path = current_exe.parent().and_then( |path| {
-        path.parent()
-    }).and_then( |path| {
-        path.parent()
-    }).expect("Failed to get the location of the AppImage");
-    let mut path = String::new();
-    path.push_str(parent_path.to_str().unwrap());
-    return path;
+    let exe_directory = current_exe.parent();
+    if exe_directory.is_none() {
+        return Err(Error::new(ErrorKind::NotFound,
+                              "Cannot get the wrapper directory"));
+    }
+    let ruby_executable = exe_directory.unwrap().join("ruby");
+    if ruby_executable.exists() {
+        Ok(CString::new(ruby_executable.to_str().unwrap())
+            .expect("Path to Ruby executable contains invalid characters"))
+    } else {
+        Err(Error::new(ErrorKind::NotFound,
+                       format!("Ruby executable not found in {}",
+                               ruby_executable.to_str().unwrap())))
+    }
 }
 
 pub fn create_new_environment() -> Vec<CString> {
@@ -54,6 +60,18 @@ fn copy_environment() -> HashMap<String, String> {
         environment.insert(key, value);
     }
     environment
+}
+
+fn get_appimage_directory() -> String {
+    let current_exe = env::current_exe().expect("Failed to get path to current executable");
+    let parent_path = current_exe.parent().and_then( |path| {
+        path.parent()
+    }).and_then( |path| {
+        path.parent()
+    }).expect("Failed to get the location of the AppImage");
+    let mut path = String::new();
+    path.push_str(parent_path.to_str().unwrap());
+    return path;
 }
 
 fn patch_variables(environment: &mut Environment) {
