@@ -4,6 +4,7 @@ use std::{
     ffi::CString,
 };
 use std::borrow::Borrow;
+use std::path::PathBuf;
 
 // Get the location of the executable. It will be in usr/bin somewhere
 // Use at as basis for the ENV variable generation
@@ -30,6 +31,7 @@ pub fn create_new_environment() -> Vec<CString> {
     patch_variables(&mut environment);
     disable_python_cache(&mut environment);
     identify_as_appimage(&mut environment);
+    specify_ssl_cert_file(&mut environment);
     convert_environment_to_cstrings(&environment)
 }
 
@@ -85,6 +87,17 @@ fn disable_python_cache(environment: &mut Environment) {
 
 fn identify_as_appimage(environment: &mut Environment) {
     environment.env.insert(String::from("APPIMAGE"), String::from("1"));
+}
+
+fn specify_ssl_cert_file(environment: &mut Environment) {
+    let ssl_cert_file = String::from("SSL_CERT_FILE");
+    if environment.env.contains_key(&ssl_cert_file) {
+        return;
+    }
+    let ssl_file_path: PathBuf = [&environment.root_dir, "cacert.pem"].iter().collect();
+    if ssl_file_path.exists() {
+        environment.env.insert(ssl_cert_file, ssl_file_path.to_str().unwrap().to_string());
+    }
 }
 
 fn convert_environment_to_cstrings(environment: &Environment) -> Vec<CString> {
