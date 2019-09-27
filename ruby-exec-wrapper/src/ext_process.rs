@@ -29,6 +29,7 @@ pub fn create_new_environment() -> Vec<CString> {
     };
     patch_variables(&mut environment);
     disable_python_cache(&mut environment);
+    identify_as_appimage(&mut environment);
     convert_environment_to_cstrings(&environment)
 }
 
@@ -80,6 +81,10 @@ fn patch_variable(variable: &str, paths: Vec<&str>, environment: &mut Environmen
 
 fn disable_python_cache(environment: &mut Environment) {
     environment.env.insert(String::from("PYTHONDONTWRITEBYTECODE"), String::from("1"));
+}
+
+fn identify_as_appimage(environment: &mut Environment) {
+    environment.env.insert(String::from("APPIMAGE"), String::from("1"));
 }
 
 fn convert_environment_to_cstrings(environment: &Environment) -> Vec<CString> {
