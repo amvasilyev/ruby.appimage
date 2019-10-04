@@ -45,10 +45,12 @@ RUN scl enable devtoolset-8 'cargo build --release' && \
         cp target/release/ruby-appimage-wrapper $RUBY_DIR/usr/bin/
 
 # Put gen_appimage.sh script into the root
+WORKDIR $WORKSPACE
 COPY gen_appimage.sh $WORKSPACE
+COPY scl_wrapper.sh $WORKSPACE
 
 # Make the file executable
-RUN chmod +x $WORKSPACE/gen_appimage.sh
+RUN chmod +x $WORKSPACE/gen_appimage.sh $WORKSPACE/scl_wrapper.sh
 
 # Allow to run sudo without password for all users
 # Create seveal users for common UIDs (need to fix it in the future)
@@ -64,4 +66,5 @@ RUN echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
         groupadd -g 1004 group4 && \
         useradd -u 1004 -g 1004 user4
 
-ENTRYPOINT ["/usr/bin/scl", "enable", "devtoolset-8", "/build/gen_appimage.sh"]
+
+ENTRYPOINT ["/build/scl_wrapper.sh"]
